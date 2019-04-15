@@ -27,7 +27,6 @@ type AssetSource struct {
 }
 
 type VfsData struct {
-	path       string
 	as         *AssetSource
 	migrations *source.Migrations
 }
@@ -43,7 +42,6 @@ func WithInstance(instance interface{}) (source.Driver, error) {
 	as := instance.(*AssetSource)
 
 	vfsData := &VfsData{
-		path:       "/",
 		as:         as,
 		migrations: source.NewMigrations(),
 	}
@@ -82,7 +80,7 @@ func (f *VfsData) Close() error {
 
 func (f *VfsData) First() (version uint, err error) {
 	if v, ok := f.migrations.First(); !ok {
-		return 0, &os.PathError{Op: "first", Path: f.path, Err: os.ErrNotExist}
+		return 0, &os.PathError{Op: "first", Path: f.as.Path, Err: os.ErrNotExist}
 	} else {
 		return v, nil
 	}
@@ -90,7 +88,7 @@ func (f *VfsData) First() (version uint, err error) {
 
 func (f *VfsData) Prev(version uint) (prevVersion uint, err error) {
 	if v, ok := f.migrations.Prev(version); !ok {
-		return 0, &os.PathError{Op: fmt.Sprintf("prev for version %v", version), Path: f.path, Err: os.ErrNotExist}
+		return 0, &os.PathError{Op: fmt.Sprintf("prev for version %v", version), Path: f.as.Path, Err: os.ErrNotExist}
 	} else {
 		return v, nil
 	}
@@ -98,7 +96,7 @@ func (f *VfsData) Prev(version uint) (prevVersion uint, err error) {
 
 func (f *VfsData) Next(version uint) (nextVersion uint, err error) {
 	if v, ok := f.migrations.Next(version); !ok {
-		return 0, &os.PathError{Op: fmt.Sprintf("next for version %v", version), Path: f.path, Err: os.ErrNotExist}
+		return 0, &os.PathError{Op: fmt.Sprintf("next for version %v", version), Path: f.as.Path, Err: os.ErrNotExist}
 	} else {
 		return v, nil
 	}
@@ -106,22 +104,22 @@ func (f *VfsData) Next(version uint) (nextVersion uint, err error) {
 
 func (f *VfsData) ReadUp(version uint) (r io.ReadCloser, identifier string, err error) {
 	if m, ok := f.migrations.Up(version); ok {
-		r, err := f.as.FS.Open(path.Join(f.path, m.Raw))
+		r, err := f.as.FS.Open(path.Join(f.as.Path, m.Raw))
 		if err != nil {
 			return nil, "", err
 		}
 		return r, m.Identifier, nil
 	}
-	return nil, "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.path, Err: os.ErrNotExist}
+	return nil, "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.as.Path, Err: os.ErrNotExist}
 }
 
 func (f *VfsData) ReadDown(version uint) (r io.ReadCloser, identifier string, err error) {
 	if m, ok := f.migrations.Down(version); ok {
-		r, err := f.as.FS.Open(path.Join(f.path, m.Raw))
+		r, err := f.as.FS.Open(path.Join(f.as.Path, m.Raw))
 		if err != nil {
 			return nil, "", err
 		}
 		return r, m.Identifier, nil
 	}
-	return nil, "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.path, Err: os.ErrNotExist}
+	return nil, "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.as.Path, Err: os.ErrNotExist}
 }
